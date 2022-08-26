@@ -8,6 +8,7 @@ import { FeatureFlags } from '../../../../feature_flags.js'
 import { FunctionBundlingUserError } from '../../../../utils/error.js'
 import { getPathWithExtension, safeUnlink } from '../../../../utils/fs.js'
 import { RuntimeType } from '../../../runtime.js'
+import { getFileExtensionForFormat } from '../../utils/module_format.js'
 import { NodeBundlerType } from '../types.js'
 
 import { getBundlerTarget, getModuleFormat } from './bundler_target.js'
@@ -96,6 +97,7 @@ export const bundleJsFile = async function ({
     featureFlags,
     config.nodeVersion,
   )
+  const outputExtension = getFileExtensionForFormat(moduleFormat, featureFlags)
 
   try {
     const { metafile = { inputs: {}, outputs: {} }, warnings } = await build({
@@ -108,6 +110,7 @@ export const bundleJsFile = async function ({
       metafile: true,
       nodePaths: additionalModulePaths,
       outdir: targetDirectory,
+      outExtension: { '.js': outputExtension },
       platform: 'node',
       plugins,
       resolveExtensions: RESOLVE_EXTENSIONS,
@@ -119,6 +122,7 @@ export const bundleJsFile = async function ({
       destFolder: targetDirectory,
       outputs: metafile.outputs,
       srcFile,
+      outputExtension,
     })
     const inputs = Object.keys(metafile.inputs).map((path) => resolve(path))
     const cleanTempFiles = getCleanupFunction([...bundlePaths.keys()])
@@ -131,6 +135,7 @@ export const bundleJsFile = async function ({
       inputs,
       moduleFormat,
       nativeNodeModules,
+      outputExtension,
       nodeModulesWithDynamicImports: [...nodeModulesWithDynamicImports],
       warnings,
     }
@@ -151,10 +156,12 @@ const getBundlePaths = ({
   destFolder,
   outputs,
   srcFile,
+  outputExtension,
 }: {
   destFolder: string
   outputs: Metafile['outputs']
   srcFile: string
+  outputExtension: string
 }) => {
   const bundleFilename = `${basename(srcFile, extname(srcFile))}.js`
   const mainFileDirectory = dirname(srcFile)
@@ -172,10 +179,10 @@ const getBundlePaths = ({
 
     if (output.entryPoint && basename(output.entryPoint) === basename(srcFile)) {
       // Ensuring the main file has a `.js` extension.
-      const normalizedSrcFile = getPathWithExtension(srcFile, '.js')
+      const normalizedSrcFile = getPathWithExtension(srcFile, outputExtension)
 
       bundlePaths.set(absolutePath, normalizedSrcFile)
-    } else if (extension === '.js' || filename === `${bundleFilename}.map`) {
+    } else if (extension === outputExtension || filename === `${bundleFilename}.map`) {
       bundlePaths.set(absolutePath, join(mainFileDirectory, filename))
     }
   })

@@ -4,6 +4,7 @@ module.exports = {
   extends: '@netlify/eslint-config-node',
   rules: {
     'import/extensions': ['error', 'ignorePackages'],
+    'max-lines': 'off',
     'n/no-missing-import': 'off',
     // This is disabled because TypeScript transpiles some features currently
     // unsupported by Node 12, i.e. optional chaining

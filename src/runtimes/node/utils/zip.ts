@@ -1,16 +1,17 @@
 import { Buffer } from 'buffer'
 import { Stats, promises as fs } from 'fs'
 import os from 'os'
-import { basename, join, resolve } from 'path'
+import { basename, join } from 'path'
 
 import copyFile from 'cp-file'
 import deleteFiles from 'del'
 import pMap from 'p-map'
 
 import { startZip, addZipFile, addZipContent, endZip, ZipArchive } from '../../../archive.js'
+import type { FeatureFlags } from '../../../feature_flags.js'
 import { mkdirAndWriteFile } from '../../../utils/fs.js'
 
-import { EntryFile, getEntryFile } from './entry_file.js'
+import { conflictsWithEntryFile, EntryFile, getEntryFile, isEntryFile } from './entry_file.js'
 import type { ModuleFormat } from './module_format.js'
 import { normalizeFilePath } from './normalize_path.js'
 
@@ -33,6 +34,7 @@ interface ZipNodeParameters {
   moduleFormat: ModuleFormat
   rewrites?: Map<string, string>
   srcFiles: string[]
+  featureFlags: FeatureFlags
 }
 
 const createDirectory = async function ({
@@ -45,6 +47,7 @@ const createDirectory = async function ({
   moduleFormat,
   rewrites = new Map(),
   srcFiles,
+  featureFlags,
 }: ZipNodeParameters) {
   const { contents: entryContents, filename: entryFilename } = getEntryFile({
     commonPrefix: basePath,
@@ -52,6 +55,7 @@ const createDirectory = async function ({
     mainFile,
     moduleFormat,
     userNamespace: DEFAULT_USER_SUBDIRECTORY,
+    featureFlags,
   })
   const functionFolder = join(destFolder, basename(filename, extension))
 
@@ -96,27 +100,37 @@ const createZipArchive = async function ({
   moduleFormat,
   rewrites,
   srcFiles,
+  featureFlags,
 }: ZipNodeParameters) {
   const destPath = join(destFolder, `${basename(filename, extension)}.zip`)
   const { archive, output } = startZip(destPath)
-  const entryFilename = `${basename(filename, extension)}.js`
-  const entryFilePath = resolve(basePath, entryFilename)
 
   // We don't need an entry file if it would end up with the same path as the
   // function's main file.
-  const needsEntryFile = entryFilePath !== mainFile
+  const needsEntryFile = !isEntryFile(mainFile, { basePath, filename })
 
   // There is a naming conflict with the entry file if one of the supporting
   // files (i.e. not the main file) has the path that the entry file needs to
   // take.
-  const hasEntryFileConflict = srcFiles.some((srcFile) => srcFile === entryFilePath && srcFile !== mainFile)
+  const hasEntryFileConflict = conflictsWithEntryFile(srcFiles, {
+    basePath,
+    filename,
+    mainFile,
+  })
 
   // If there is a naming conflict, we move all user files (everything other
   // than the entry file) to its own sub-directory.
   const userNamespace = hasEntryFileConflict ? DEFAULT_USER_SUBDIRECTORY : ''
 
   if (needsEntryFile) {
-    const entryFile = getEntryFile({ commonPrefix: basePath, filename, mainFile, moduleFormat, userNamespace })
+    const entryFile = getEntryFile({
+      commonPrefix: basePath,
+      filename,
+      mainFile,
+      moduleFormat,
+      userNamespace,
+      featureFlags,
+    })
 
     addEntryFileToZip(archive, entryFile)
   }

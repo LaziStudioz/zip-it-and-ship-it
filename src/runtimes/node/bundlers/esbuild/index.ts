@@ -72,6 +72,7 @@ const bundle: BundleFunction = async ({
     moduleFormat,
     nativeNodeModules = {},
     nodeModulesWithDynamicImports,
+    outputExtension,
     warnings,
   } = await bundleJsFile({
     additionalModulePaths: pluginsModulesPath ? [pluginsModulesPath] : [],
@@ -109,7 +110,7 @@ const bundle: BundleFunction = async ({
   // path of the original, pre-bundling function file. We'll add the actual
   // bundled file further below.
   const supportingSrcFiles = srcFiles.filter((path) => path !== mainFile)
-  const normalizedMainFile = getPathWithExtension(mainFile, '.js')
+  const normalizedMainFile = getPathWithExtension(mainFile, outputExtension)
   const functionBasePath = getFunctionBasePath({
     basePathFromConfig: basePath,
     mainFile,

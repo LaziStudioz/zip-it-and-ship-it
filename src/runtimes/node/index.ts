@@ -108,6 +108,7 @@ const zipFunction: ZipFunction = async function ({
     moduleFormat,
     rewrites,
     srcFiles,
+    featureFlags,
   })
 
   await cleanupFunction?.()
