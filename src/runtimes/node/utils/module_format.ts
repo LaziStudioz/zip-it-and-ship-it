@@ -5,14 +5,23 @@ export const enum ModuleFormat {
   ESM = 'esm',
 }
 
-export const getFileExtensionForFormat = (moduleFormat: ModuleFormat, featureFlags: FeatureFlags): string => {
+export const enum ModuleFileExtensions {
+  CJS = '.cjs',
+  JS = '.js',
+  MJS = '.mjs',
+}
+
+export const getFileExtensionForFormat = (
+  moduleFormat: ModuleFormat,
+  featureFlags: FeatureFlags,
+): ModuleFileExtensions => {
   if (!featureFlags.zisi_output_cjs_extension) {
-    return '.js'
+    return ModuleFileExtensions.JS
   }
 
   if (moduleFormat === ModuleFormat.COMMONJS) {
-    return '.cjs'
+    return ModuleFileExtensions.CJS
   }
 
-  return '.mjs'
+  return ModuleFileExtensions.MJS
 }
