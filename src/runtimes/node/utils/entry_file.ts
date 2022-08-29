@@ -14,10 +14,10 @@ const getEntryFileContents = (mainPath: string, moduleFormat: string) => {
   const importPath = `.${mainPath.startsWith('/') ? mainPath : `/${mainPath}`}`
 
   if (moduleFormat === ModuleFormat.COMMONJS) {
-    return `module.exports=require('${importPath}')`
+    return `module.exports = require('${importPath}')`
   }
 
-  return `export{handler}from'${importPath}'`
+  return `export{ handler } from '${importPath}'`
 }
 
 // They are also in the order that AWS Lambda will try to find the entry point
