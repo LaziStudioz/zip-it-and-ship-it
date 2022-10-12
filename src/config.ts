@@ -22,6 +22,7 @@ interface FunctionConfig {
   rustTargetDirectory?: string
   schedule?: string
   zipGo?: boolean
+  displayName?: string
 }
 
 interface FunctionConfigFile {
