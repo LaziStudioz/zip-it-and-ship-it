@@ -30,4 +30,4 @@ jobs:
         uses: netlify/delta-action@v4
         with:
           title: '⏱ Benchmark results'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TOKEN }}
